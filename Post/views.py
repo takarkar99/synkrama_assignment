@@ -1,5 +1,5 @@
 from rest_framework.views import APIView
-from .serializers import PostDetailSerializers, PostListSerializers
+from .serializers import PostDetailSerializers, PostListSerializers, UserSerializers
 from .models import Post
 from rest_framework.response import Response
 from rest_framework import status
@@ -12,6 +12,7 @@ from .models import UserBlock
 from .serializers import UserBlockSerializers
 from rest_framework.permissions import AllowAny
 from .permissions import IsSuperOrOwner
+from django.db.models import Q
 
 
 @api_view(['POST'])
@@ -19,13 +20,17 @@ from .permissions import IsSuperOrOwner
 def Userview(request):
 
     try:        
-        data = request.data
-        s_username = data.get('username')
-        p_password = data.get('password')
-        user = User.objects.create_user(username=s_username, password=p_password)
-        user.save()
-        return Response(data={'message':'user successfully created'})
+        user_serializers = UserSerializers(data=request.data)
+        if user_serializers.is_valid():
 
+            s_username = user_serializers.validated_data.get('username')
+            e_mail = user_serializers.validated_data.get('email')
+            p_password = user_serializers.validated_data.get('password')
+            user = User.objects.create_user(username=s_username, email=e_mail, password=p_password)
+            # print(user)
+            user.save()
+            return Response(data={'message':'user successfully created'}, status=status.HTTP_201_CREATED)
+        return Response(data={'message':'invalid data', 'error': user_serializers.errors})
     except Exception as e:
         return Response(data=str(e))
 
@@ -40,9 +45,17 @@ class PostView(APIView):
         s_body = request.query_params.get('body')
         s_author = request.query_params.get('author')
         
+        author_name = request.query_params.get('a_name')
+        p_title = request.query_params.get('title')
 
         try:
             
+            if author_name or p_title :
+
+                obj = Post.objects.filter(Q(author__username = author_name) | Q(title = p_title))
+                serializer = PostDetailSerializers(obj, many=True)
+                return Response(data=serializer.data, status=status.HTTP_200_OK)
+
             if s_title:
 
                 obj = Post.objects.filter(title=s_title)

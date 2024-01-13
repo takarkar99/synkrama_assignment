@@ -7,5 +7,5 @@ urlpatterns = [
     path('user/', Userview, name='user_url'),      # To create a User
     path('posts/', PostView.as_view(), name='post_urls'),
     path('posts/<int:pk>/', PostView.as_view(), name='post_urls'),
-    path('block-user/', UserBlockView.as_view(), name='block_urls'),
+    path('block_user/', UserBlockView.as_view(), name='block_urls'),
 ]
